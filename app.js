@@ -45,21 +45,46 @@ var TodosModel = {
   }
 };
 
+var Checkmark = {
+  oninit: function(vnode) {
+    this.todo = vnode.attrs.todo;
+  },
+  view: function(vnode) {
+    var todo = this.todo;
+    return m("label.checkmark-container.fl", [
+      m("input[type='checkbox'].checkmark-checkbox.mr4", {
+        checked: todo.done,
+        onchange: TodosModel.toggle.bind(this, todo.id)
+      }),
+      m(
+        "span.checkmark.ma2.bg-washed-blue.hover-bg-light-blue.ba.bw1.b--black-10"
+      )
+    ]);
+  }
+};
+
 var Todo = {
   oninit: function(vnode) {
     this.todo = vnode.attrs.todo;
   },
   view: function(vnode) {
     var todo = this.todo;
-    return m("li", { class: todo.done ? "done" : "" }, [
-      m("input[type='checkbox']", {
-        checked: todo.done,
-        onchange: TodosModel.toggle.bind(this, todo.id)
-      }),
-      " ",
-      todo.text,
-      " ",
-      m("button", { onclick: TodosModel.delete.bind(this, todo.id) }, "X")
+    var classes = classNames({
+      strike: todo.done,
+      "moon-gray": todo.done,
+      cf: true,
+      pa2: true,
+      "bg-white": true,
+      "shadow-5": true
+    });
+    return m("div", { class: classes }, [
+      m(Checkmark, { todo: todo }),
+      m("span.f2.fw2", [todo.text]),
+      m(
+        "div.fr.f2.fw6.mr2.washed-red.hover-light-red.pointer",
+        { onclick: TodosModel.delete.bind(this, todo.id) },
+        "X"
+      )
     ]);
   }
 };
@@ -67,7 +92,7 @@ var Todo = {
 var Todos = {
   view: function(vnode) {
     return m(
-      "ul",
+      "div",
       vnode.attrs.todos.map(function(todo, ind) {
         return m(Todo, { todo: todo, key: todo.id });
       })
@@ -88,13 +113,28 @@ var Add = {
     this.text = "";
   },
   view: function(vnode) {
-    return m("form", { onsubmit: this.add.bind(this) }, [
-      m("input[type='text']", {
-        value: this.text,
-        oninput: this.changed.bind(this)
-      }),
-      " ",
-      m("button[type='submit']", "Add Todo")
+    var inputClasses = classNames({
+      "clean-input": true,
+      "input-reset": true,
+      db: true,
+      "w-100": true,
+      mh2: true,
+      mv2: true,
+      f3: true,
+      fw2: true,
+      pv1: true,
+      "bg-near-white": true
+    });
+    return m(".pa2.bg-near-white.shadow-5.bb.bw1.b--moon-gray", [
+      m("form", { onsubmit: this.add.bind(this) }, [
+        m("input[type='text']", {
+          placeholder: "What needs to be done?",
+          autofocus: true,
+          class: inputClasses,
+          value: this.text,
+          oninput: this.changed.bind(this)
+        })
+      ])
     ]);
   }
 };
@@ -108,13 +148,11 @@ var Clear = {
 var App = {
   view: function(vnode) {
     return m("div", [
-      !!TodosModel.todos.length
-        ? m(Todos, { todos: TodosModel.todos })
-        : m("div", "All Done! Nothing to see here."),
       m(Add),
-      m(Clear)
+      !!TodosModel.todos.length ? m(Todos, { todos: TodosModel.todos }) : ""
+      // m(Clear)
     ]);
   }
 };
 
-m.mount(document.body, App);
+m.mount(document.getElementById("app"), App);

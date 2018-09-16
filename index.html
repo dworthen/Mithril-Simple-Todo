@@ -5,16 +5,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
-  <style>
-    .done {
-      text-decoration: line-through;
-    }
-  </style>
+  <title>Todo App</title>
+  <link rel="stylesheet" href="https://unpkg.com/tachyons@4.10.0/css/tachyons.min.css" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="bg-light-blue">
+  <div class="container">
+    <h1 class="f1 ttu black-70 fw7 tc">Todo List</h1>
 
+    <div id="app"></div>
+  </div>
+
+  <script src="https://unpkg.com/classnames@2.2.6/index.js"></script>
   <script src="https://unpkg.com/mithril/mithril.js"></script>
   <script src="app.js"></script>
 </body>
