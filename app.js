@@ -1,11 +1,8 @@
-/**
- * todoModel = { text: string, done: boolean}
- * Start with empty list
- */
 var TodosModel = {
   currentId: 0,
   todos: [],
   selected: "all",
+  allChecked: false,
 
   getAllTodos: function() {
     return TodosModel.todos;
@@ -31,6 +28,20 @@ var TodosModel = {
     }
   },
 
+  checkAll: function() {
+    TodosModel.todos = TodosModel.todos.map(function(el) {
+      el.done = true;
+      return el;
+    });
+  },
+
+  unCheckAll: function() {
+    TodosModel.todos = TodosModel.todos.map(function(el) {
+      el.done = false;
+      return el;
+    });
+  },
+
   add(todo) {
     if (!todo || !todo.text) return;
     TodosModel.currentId++;
@@ -53,6 +64,7 @@ var TodosModel = {
         TodosModel.todos.splice(i, 1);
       }
     }
+    TodosModel.allChecked = false;
   },
 
   findTodoIndex: function(id) {
@@ -63,14 +75,11 @@ var TodosModel = {
 };
 
 var Checkmark = {
-  oninit: function(vnode) {
-    this.todo = vnode.attrs.todo;
-  },
   view: function(vnode) {
-    var todo = this.todo;
+    var checked = vnode.attrs.checked;
     return m("label.checkmark-container.fl", [
       m("input[type='checkbox'].checkmark-checkbox.mr4", {
-        checked: todo.done,
+        checked: checked,
         onchange: vnode.attrs.changeFn // TodosModel.toggle.bind(this, todo.id)
       }),
       m(
@@ -96,7 +105,7 @@ var Todo = {
     });
     return m("div", { class: classes }, [
       m(Checkmark, {
-        todo: todo,
+        checked: todo.done,
         changeFn: TodosModel.toggle.bind(this, todo.id)
       }),
       m("span.f2.fw2", [todo.text]),
@@ -137,8 +146,9 @@ var Add = {
       "clean-input": true,
       "input-reset": true,
       db: true,
-      "w-100": true,
-      mh2: true,
+      "w-80": false,
+      fr: true,
+      mh2: false,
       mv2: true,
       f3: true,
       fw2: true,
@@ -146,7 +156,27 @@ var Add = {
       "lh-copy": true,
       "bg-near-white": true
     });
-    return m(".pa2.bg-near-white.shadow-5.bb.bw1.b--moon-gray", [
+    var divClasses = classNames(
+      "pa2",
+      "bg-near-white",
+      "shadow-5",
+      "bb",
+      "bw1",
+      "b--moon-gray",
+      "cf"
+    );
+    return m("div", { class: divClasses }, [
+      m(Checkmark, {
+        checked: TodosModel.allChecked,
+        changeFn: function() {
+          if (TodosModel.allChecked) {
+            TodosModel.unCheckAll();
+          } else {
+            TodosModel.checkAll();
+          }
+          TodosModel.allChecked = !TodosModel.allChecked;
+        }
+      }),
       m("form", { onsubmit: this.add.bind(this) }, [
         m("input[type='text']", {
           placeholder: "What needs to be done?",
@@ -160,9 +190,80 @@ var Add = {
   }
 };
 
-var Clear = {
+var All = {
+  view: function(vnode) {
+    return m(
+      ".fl.pointer.pa2.mh2.ba.b--black-10",
+      {
+        onclick: function() {
+          TodosModel.selected = "all";
+        }
+      },
+      TodosModel.getAllTodos().length + " All"
+    );
+  }
+};
+
+var Active = {
+  view: function(vnode) {
+    return m(
+      ".fl.pointer.pa2.mh2.ba.b--black-10",
+      {
+        onclick: function() {
+          TodosModel.selected = "active";
+        }
+      },
+      TodosModel.getActiveTodos().length + " Active"
+    );
+  }
+};
+
+var Completed = {
+  view: function(vnode) {
+    return m(
+      ".fl.pointer.pa2.mh2.ba.b--black-10",
+      {
+        onclick: function() {
+          TodosModel.selected = "completed";
+        }
+      },
+      TodosModel.getCompletedTodos().length + " Completed"
+    );
+  }
+};
+
+var ClearCompleted = {
   view: function() {
-    return m("button", { onclick: TodosModel.clearDone }, "Clear Done");
+    return m(
+      ".fr.pa2.pointer",
+      { onclick: TodosModel.clearDone },
+      TodosModel.getCompletedTodos().length ? "Clear Completed" : ""
+    );
+  }
+};
+
+var Footer = {
+  view: function(vnode) {
+    var divClasses = classNames(
+      "ph2",
+      "pt3",
+      "pb2",
+      "bg-white",
+      "shadow-5",
+      "cf"
+    );
+    return m("div", { class: divClasses }, [
+      m(All),
+      m(Active),
+      m(Completed),
+      m(ClearCompleted)
+    ]);
+  }
+};
+
+var ShowChildren = {
+  view: function(vnode) {
+    return m("span", [!vnode.attrs.show ? "" : vnode.children]);
   }
 };
 
@@ -176,7 +277,11 @@ var App = {
           : TodosModel.getAllTodos();
     return m("div", [
       m(Add),
-      !!TodosModel.todos.length ? m(Todos, { todos: todos }) : ""
+      m(ShowChildren, { show: !!TodosModel.todos.length }, [
+        m(Todos, { todos: todos }),
+        m(Footer)
+      ])
+      // !!TodosModel.todos.length ? m(Todos, { todos: todos }) : ""
       // m(Clear)
     ]);
   }

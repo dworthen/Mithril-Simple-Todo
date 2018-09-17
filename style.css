@@ -84,6 +84,7 @@ body {
 .clean-input:focus {
   outline: none;
   border: 0px;
+  width: 89%;
 }
 
 .clean-input::placeholder {
