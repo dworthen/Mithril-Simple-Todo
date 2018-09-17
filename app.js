@@ -5,6 +5,23 @@
 var TodosModel = {
   currentId: 0,
   todos: [],
+  selected: "all",
+
+  getAllTodos: function() {
+    return TodosModel.todos;
+  },
+
+  getActiveTodos: function() {
+    return TodosModel.todos.filter(function(el) {
+      return !el.done;
+    });
+  },
+
+  getCompletedTodos: function() {
+    return TodosModel.todos.filter(function(el) {
+      return el.done;
+    });
+  },
 
   toggle: function(id) {
     var ind = TodosModel.findTodoIndex(id);
@@ -54,7 +71,7 @@ var Checkmark = {
     return m("label.checkmark-container.fl", [
       m("input[type='checkbox'].checkmark-checkbox.mr4", {
         checked: todo.done,
-        onchange: TodosModel.toggle.bind(this, todo.id)
+        onchange: vnode.attrs.changeFn // TodosModel.toggle.bind(this, todo.id)
       }),
       m(
         "span.checkmark.ma2.bg-washed-blue.hover-bg-light-blue.ba.bw1.b--black-10"
@@ -78,7 +95,10 @@ var Todo = {
       "shadow-5": true
     });
     return m("div", { class: classes }, [
-      m(Checkmark, { todo: todo }),
+      m(Checkmark, {
+        todo: todo,
+        changeFn: TodosModel.toggle.bind(this, todo.id)
+      }),
       m("span.f2.fw2", [todo.text]),
       m(
         "div.fr.f2.fw6.mr2.washed-red.hover-light-red.pointer",
@@ -123,6 +143,7 @@ var Add = {
       f3: true,
       fw2: true,
       pv1: true,
+      "lh-copy": true,
       "bg-near-white": true
     });
     return m(".pa2.bg-near-white.shadow-5.bb.bw1.b--moon-gray", [
@@ -147,9 +168,15 @@ var Clear = {
 
 var App = {
   view: function(vnode) {
+    var todos =
+      TodosModel.selected === "active"
+        ? TodosModel.getActiveTodos()
+        : TodosModel.selected === "completed"
+          ? TodosModel.getCompletedTodos()
+          : TodosModel.getAllTodos();
     return m("div", [
       m(Add),
-      !!TodosModel.todos.length ? m(Todos, { todos: TodosModel.todos }) : ""
+      !!TodosModel.todos.length ? m(Todos, { todos: todos }) : ""
       // m(Clear)
     ]);
   }
