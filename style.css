@@ -34,7 +34,7 @@ body {
   /* position: absolute; */
   opacity: 0;
   cursor: pointer;
-  width: 30px;
+  width: 32px;
 }
 
 .checkmark {
@@ -89,4 +89,9 @@ body {
 
 .clean-input::placeholder {
   /* color: ; */
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
 }

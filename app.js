@@ -1,7 +1,6 @@
 var TodosModel = {
   currentId: 0,
   todos: [],
-  selected: "all",
   allChecked: false,
 
   getAllTodos: function() {
@@ -78,42 +77,44 @@ var Checkmark = {
   view: function(vnode) {
     var checked = vnode.attrs.checked;
     return m("label.checkmark-container.fl", [
-      m("input[type='checkbox'].checkmark-checkbox.mr4", {
+      m("input[type='checkbox'].checkmark-checkbox", {
         checked: checked,
         onchange: vnode.attrs.changeFn // TodosModel.toggle.bind(this, todo.id)
       }),
-      m(
-        "span.checkmark.ma2.bg-washed-blue.hover-bg-light-blue.ba.bw1.b--black-10"
-      )
+      m("span.checkmark.bg-washed-blue.hover-bg-light-blue.ba.bw1.b--black-10")
     ]);
   }
 };
 
-var Todo = {
-  oninit: function(vnode) {
-    this.todo = vnode.attrs.todo;
-  },
+var TextField = {
   view: function(vnode) {
-    var todo = this.todo;
+    var todo = vnode.attrs.todo;
     var classes = classNames({
       strike: todo.done,
-      "moon-gray": todo.done,
-      cf: true,
-      pa2: true,
-      "bg-white": true,
-      "shadow-5": true
+      "moon-gray": todo.done
     });
-    return m("div", { class: classes }, [
-      m(Checkmark, {
-        checked: todo.done,
-        changeFn: TodosModel.toggle.bind(this, todo.id)
-      }),
-      m("span.f2.fw2", [todo.text]),
+    return [
+      m("span.f2.fw2", { class: classes }, [todo.text]),
       m(
         "div.fr.f2.fw6.mr2.washed-red.hover-light-red.pointer",
         { onclick: TodosModel.delete.bind(this, todo.id) },
         "X"
       )
+    ];
+  }
+};
+
+var Todo = {
+  view: function(vnode) {
+    var todo = vnode.attrs.todo;
+    return m(".cf.pa2.bg-white.shadow-5.bb.b--black-10", [
+      m(".fl.w-10.pa2", [
+        m(Checkmark, {
+          checked: todo.done,
+          changeFn: TodosModel.toggle.bind(this, todo.id)
+        })
+      ]),
+      m(".fl.w-90.cf.pa1", [m(TextField, { todo: todo })])
     ]);
   }
 };
@@ -129,105 +130,78 @@ var Todos = {
   }
 };
 
-var Add = {
-  oninit: function(vnode) {
-    this.text = "";
+var AddTodoInput = {
+  text: "",
+  handleChange: function(vnode) {
+    return function(e) {
+      vnode.state.text = e.target.value;
+    };
   },
-  changed: function(e) {
-    this.text = e.target.value;
-  },
-  add: function(e) {
-    e.preventDefault();
-    TodosModel.add({ text: this.text, done: false });
-    this.text = "";
+  addTodo: function(vnode) {
+    return function(e) {
+      e.preventDefault();
+      TodosModel.add({ text: vnode.state.text, done: TodosModel.allChecked });
+      vnode.state.text = "";
+    };
   },
   view: function(vnode) {
-    var inputClasses = classNames({
-      "clean-input": true,
-      "input-reset": true,
-      db: true,
-      "w-80": false,
-      fr: true,
-      mh2: false,
-      mv2: true,
-      f3: true,
-      fw2: true,
-      pv1: true,
-      "lh-copy": true,
-      "bg-near-white": true
-    });
-    var divClasses = classNames(
-      "pa2",
-      "bg-near-white",
-      "shadow-5",
-      "bb",
-      "bw1",
-      "b--moon-gray",
-      "cf"
-    );
-    return m("div", { class: divClasses }, [
-      m(Checkmark, {
-        checked: TodosModel.allChecked,
-        changeFn: function() {
-          if (TodosModel.allChecked) {
-            TodosModel.unCheckAll();
-          } else {
-            TodosModel.checkAll();
-          }
-          TodosModel.allChecked = !TodosModel.allChecked;
-        }
-      }),
-      m("form", { onsubmit: this.add.bind(this) }, [
-        m("input[type='text']", {
+    return m("form", { onsubmit: vnode.state.addTodo(vnode) }, [
+      m(
+        "input[type='text'].clean-input.input-reset.bg-near-white.f3.fw2.lh-copy.db.w-100.pv1",
+        {
           placeholder: "What needs to be done?",
           autofocus: true,
-          class: inputClasses,
-          value: this.text,
-          oninput: this.changed.bind(this)
-        })
-      ])
+          value: vnode.state.text,
+          oninput: vnode.state.handleChange(vnode)
+        }
+      )
     ]);
   }
 };
 
-var All = {
+var Header = {
+  handleCheck: function() {
+    if (TodosModel.allChecked) {
+      TodosModel.unCheckAll();
+    } else {
+      TodosModel.checkAll();
+    }
+    TodosModel.allChecked = !TodosModel.allChecked;
+  },
   view: function(vnode) {
-    return m(
-      ".fl.pointer.pa2.mh2.ba.b--black-10",
-      {
-        onclick: function() {
-          TodosModel.selected = "all";
-        }
-      },
-      TodosModel.getAllTodos().length + " All"
-    );
+    return m(".cf.pa2.bg-near-white.shadow-5.bb.bw1.b--moon-gray", [
+      m(".fl.w-10.pa2", [
+        m(Checkmark, {
+          checked: TodosModel.allChecked,
+          changeFn: vnode.state.handleCheck
+        })
+      ]),
+      m(".fl.w-90.cf.pa1", [m(AddTodoInput)])
+    ]);
   }
 };
 
-var Active = {
+var Filter = {
+  init: function(vnode) {},
   view: function(vnode) {
+    var filter = vnode.attrs.filter;
+    var count =
+      filter === "active"
+        ? TodosModel.getActiveTodos().length
+        : filter === "completed"
+          ? TodosModel.getCompletedTodos().length
+          : TodosModel.getAllTodos().length;
+    var activeClass = classNames({
+      "bg-light-green": "/" + filter === m.route.get()
+    });
     return m(
-      ".fl.pointer.pa2.mh2.ba.b--black-10",
+      "a[href=/" + filter + "].fl.pa2.mh2.ba.b--black-10.ttc",
       {
-        onclick: function() {
-          TodosModel.selected = "active";
-        }
+        oncreate: m.route.link,
+        onupdate: m.route.link,
+        class: activeClass
       },
-      TodosModel.getActiveTodos().length + " Active"
-    );
-  }
-};
-
-var Completed = {
-  view: function(vnode) {
-    return m(
-      ".fl.pointer.pa2.mh2.ba.b--black-10",
-      {
-        onclick: function() {
-          TodosModel.selected = "completed";
-        }
-      },
-      TodosModel.getCompletedTodos().length + " Completed"
+      count + " " + filter
     );
   }
 };
@@ -244,47 +218,51 @@ var ClearCompleted = {
 
 var Footer = {
   view: function(vnode) {
-    var divClasses = classNames(
-      "ph2",
-      "pt3",
-      "pb2",
-      "bg-white",
-      "shadow-5",
-      "cf"
-    );
-    return m("div", { class: divClasses }, [
-      m(All),
-      m(Active),
-      m(Completed),
+    return m(".ph2.pt3.pb2.bg-white.shadow-5.cf", [
+      m(Filter, { filter: "all" }),
+      m(Filter, { filter: "active" }),
+      m(Filter, { filter: "completed" }),
       m(ClearCompleted)
     ]);
   }
 };
 
-var ShowChildren = {
+var ShowChildrenIf = {
   view: function(vnode) {
-    return m("span", [!vnode.attrs.show ? "" : vnode.children]);
+    return vnode.attrs.show ? vnode.children : [];
   }
 };
 
 var App = {
   view: function(vnode) {
-    var todos =
-      TodosModel.selected === "active"
-        ? TodosModel.getActiveTodos()
-        : TodosModel.selected === "completed"
-          ? TodosModel.getCompletedTodos()
-          : TodosModel.getAllTodos();
+    var todos = vnode.attrs.todos;
     return m("div", [
-      m(Add),
-      m(ShowChildren, { show: !!TodosModel.todos.length }, [
+      m(Header),
+      m(ShowChildrenIf, { show: !!TodosModel.todos.length }, [
         m(Todos, { todos: todos }),
         m(Footer)
       ])
-      // !!TodosModel.todos.length ? m(Todos, { todos: todos }) : ""
-      // m(Clear)
     ]);
   }
 };
 
-m.mount(document.getElementById("app"), App);
+m.route(document.getElementById("app"), "/all", {
+  "/all": {
+    view: function(vnode) {
+      var todos = TodosModel.getAllTodos();
+      return m(App, { todos: todos });
+    }
+  },
+  "/active": {
+    view: function(vnode) {
+      var todos = TodosModel.getActiveTodos();
+      return m(App, { todos: todos });
+    }
+  },
+  "/completed": {
+    view: function(vnode) {
+      var todos = TodosModel.getCompletedTodos();
+      return m(App, { todos: todos });
+    }
+  }
+});
