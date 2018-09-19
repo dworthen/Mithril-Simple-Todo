@@ -131,7 +131,6 @@ var Todos = {
 };
 
 var AddTodoInput = {
-  text: "",
   handleChange: function(vnode) {
     return function(e) {
       vnode.state.text = e.target.value;
@@ -151,7 +150,7 @@ var AddTodoInput = {
         {
           placeholder: "What needs to be done?",
           autofocus: true,
-          value: vnode.state.text,
+          value: vnode.state.text || "",
           oninput: vnode.state.handleChange(vnode)
         }
       )
@@ -182,15 +181,9 @@ var Header = {
 };
 
 var Filter = {
-  init: function(vnode) {},
   view: function(vnode) {
     var filter = vnode.attrs.filter;
-    var count =
-      filter === "active"
-        ? TodosModel.getActiveTodos().length
-        : filter === "completed"
-          ? TodosModel.getCompletedTodos().length
-          : TodosModel.getAllTodos().length;
+    var count = vnode.attrs.count;
     var activeClass = classNames({
       "bg-light-green": "/" + filter === m.route.get()
     });
@@ -219,9 +212,15 @@ var ClearCompleted = {
 var Footer = {
   view: function(vnode) {
     return m(".ph2.pt3.pb2.bg-white.shadow-5.cf", [
-      m(Filter, { filter: "all" }),
-      m(Filter, { filter: "active" }),
-      m(Filter, { filter: "completed" }),
+      m(Filter, { filter: "all", count: TodosModel.getAllTodos().length }),
+      m(Filter, {
+        filter: "active",
+        count: TodosModel.getActiveTodos().length
+      }),
+      m(Filter, {
+        filter: "completed",
+        count: TodosModel.getCompletedTodos().length
+      }),
       m(ClearCompleted)
     ]);
   }
