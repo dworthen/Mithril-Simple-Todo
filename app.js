@@ -21,7 +21,6 @@ var TodosModel = {
 
   toggle: function(id) {
     var ind = TodosModel.findTodoIndex(id);
-    console.log(ind);
     if (ind > -1) {
       TodosModel.todos[ind].done = !TodosModel.todos[ind].done;
     }
@@ -50,7 +49,6 @@ var TodosModel = {
 
   delete(id) {
     var ind = TodosModel.findTodoIndex(id);
-    console.log(ind);
     if (ind > -1) {
       TodosModel.todos.splice(ind, 1);
     }
@@ -247,19 +245,19 @@ var App = {
 
 m.route(document.getElementById("app"), "/all", {
   "/all": {
-    view: function(vnode) {
+    render: function(vnode) {
       var todos = TodosModel.getAllTodos();
       return m(App, { todos: todos });
     }
   },
   "/active": {
-    view: function(vnode) {
+    render: function(vnode) {
       var todos = TodosModel.getActiveTodos();
       return m(App, { todos: todos });
     }
   },
   "/completed": {
-    view: function(vnode) {
+    render: function(vnode) {
       var todos = TodosModel.getCompletedTodos();
       return m(App, { todos: todos });
     }
